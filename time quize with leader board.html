@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timed Quiz</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f0f4f8;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .quiz-container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1,
+        h2 {
+            text-align: center;
+        }
+        
+        .question {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        
+        .options {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .options li {
+            background: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        
+        .options li:hover {
+            background: #cfcfcf;
+        }
+        
+        #timer {
+            text-align: center;
+            font-weight: bold;
+            color: red;
+        }
+        
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="quiz-container">
+        <h1>🧠 Timed Quiz</h1>
+        <div id="timer">Time Left: 300s</div>
+        <div id="quiz"></div>
+        <div id="result"></div>
+
+        <div id="leaderboard">
+            <h2>🏆 Leaderboard</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [{
+            question: "What does HTML stand for?",
+            options: ["Hyper Trainer Marking Language", "Hyper Text Markup Language", "Hyperlinks Text Mark Language", "None"],
+            answer: "Hyper Text Markup Language"
+        }, {
+            question: "What is the capital of France?",
+            options: ["London", "Berlin", "Madrid", "Paris"],
+            answer: "Paris"
+        }, {
+            question: "Which language is used for styling web pages?",
+            options: ["HTML", "JQuery", "CSS", "XML"],
+            answer: "CSS"
+        }, {
+            question: "What does CSS stand for?",
+            options: ["Creative Style Sheets", "Cascading Style Sheets", "Colorful Style Sheets", "Computer Style Sheets"],
+            answer: "Cascading Style Sheets"
+        }, {
+            question: "What is 9 + 10?",
+            options: ["19", "21", "910", "18"],
+            answer: "19"
+        }, {
+            question: "What does JS stand for?",
+            options: ["Java Source", "JavaScript", "Just Style", "JQuery Syntax"],
+            answer: "JavaScript"
+        }, {
+            question: "Which is not a programming language?",
+            options: ["Python", "HTML", "Java", "C++"],
+            answer: "HTML"
+        }, {
+            question: "Which tag is used to define an unordered list?",
+            options: ["<ol>", "<li>", "<ul>", "<list>"],
+            answer: "<ul>"
+        }, {
+            question: "Which symbol is used for comments in JS?",
+            options: ["//", "<!-- -->", "**", "##"],
+            answer: "//"
+        }, {
+            question: "JavaScript is a ___-side programming language.",
+            options: ["Client", "Server", "Both", "None"],
+            answer: "Both"
+        }, {
+            question: "What is the correct syntax to output in JS?",
+            options: ["echo 'Hello';", "print('Hello');", "console.log('Hello');", "printf('Hello');"],
+            answer: "console.log('Hello');"
+        }, {
+            question: "Which of the following is a Python framework?",
+            options: ["React", "Flask", "Laravel", "Angular"],
+            answer: "Flask"
+        }, {
+            question: "Which is used to connect HTML to CSS?",
+            options: ["<connect>", "<css>", "<link>", "<style>"],
+            answer: "<link>"
+        }, {
+            question: "Which is a correct loop in JS?",
+            options: ["repeat", "loop", "for", "cycle"],
+            answer: "for"
+        }, {
+            question: "Which is not an HTML5 tag?",
+            options: ["<section>", "<article>", "<footer>", "<blink>"],
+            answer: "<blink>"
+        }, {
+            question: "Which HTML attribute specifies an alternate text?",
+            options: ["alt", "title", "src", "value"],
+            answer: "alt"
+        }, {
+            question: "Which function is used to round a number in JS?",
+            options: ["Math.round()", "Math.floor()", "round()", "Math.rnd()"],
+            answer: "Math.round()"
+        }, {
+            question: "What is the output of typeof null in JS?",
+            options: ["object", "null", "undefined", "string"],
+            answer: "object"
+        }, {
+            question: "Which HTML tag is used to define a table row?",
+            options: ["<td>", "<th>", "<tr>", "<row>"],
+            answer: "<tr>"
+        }];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let timeLeft = 300;
+        let timer;
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = `Time Left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            const quizEl = document.getElementById("quiz");
+            const q = quizData[currentQuestion];
+            quizEl.innerHTML = `
+        <div class="question">${currentQuestion + 1}. ${q.question}</div>
+        <ul class="options">
+          ${q.options.map(opt => `<li onclick="checkAnswer('${opt.replace(/'/g, "\\'")}')">${opt}</li>`).join('')}
+        </ul>
+      `;
+    }
+
+    function checkAnswer(selected) {
+      if (quizData[currentQuestion].answer === selected) {
+        score++;
+      }
+      currentQuestion++;
+      if (currentQuestion < quizData.length) {
+        loadQuestion();
+      } else {
+        clearInterval(timer);
+        endQuiz();
+      }
+    }
+
+    function endQuiz() {
+      document.getElementById("quiz").innerHTML = '';
+      document.getElementById("result").innerText = `🎉 You scored ${score}/${quizData.length}`;
+      const name = prompt("Enter your name for the leaderboard:");
+      if (name) updateLeaderboard(name, score);
+    }
+
+    function updateLeaderboard(name, score) {
+      const board = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+      board.push({ name, score });
+      board.sort((a, b) => b.score - a.score);
+      localStorage.setItem("leaderboard", JSON.stringify(board));
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      const board = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+      document.getElementById("leaderboardBody").innerHTML =
+        board.map(row => `<tr><td>${row.name}</td><td>${row.score}</td></tr>`).join('');
+    }
+
+    // Initialize quiz
+    startTimer();
+    loadQuestion();
+    renderLeaderboard();
+    </script>
+
+</body>
+
+</html>
